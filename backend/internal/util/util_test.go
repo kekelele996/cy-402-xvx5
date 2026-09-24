@@ -58,3 +58,34 @@ func TestFormatAmount(t *testing.T) {
 		}
 	}
 }
+
+func TestDeadlineDaysAndText(t *testing.T) {
+	loc := time.Local
+	now := time.Date(2026, 9, 24, 9, 0, 0, 0, loc)
+	cases := []struct {
+		name string
+		due  time.Time
+		st   string
+		want string
+		days int
+	}{
+		{"today", time.Date(2026, 9, 24, 18, 0, 0, 0, loc), constants.DeadlineStatusPending, "今天到期", 0},
+		{"remaining", time.Date(2026, 9, 27, 18, 0, 0, 0, loc), constants.DeadlineStatusPending, "剩余 3 天", 3},
+		{"overdue", time.Date(2026, 9, 20, 18, 0, 0, 0, loc), constants.DeadlineStatusPending, "已逾期 4 天", -4},
+		{"completed", time.Date(2026, 9, 20, 18, 0, 0, 0, loc), constants.DeadlineStatusCompleted, "已完成", -4},
+	}
+	for _, tc := range cases {
+		if got := DaysBetween(now, tc.due); got != tc.days {
+			t.Errorf("%s: DaysBetween = %d, want %d", tc.name, got, tc.days)
+		}
+		if got := DueDayText(tc.due, tc.st, now); got != tc.want {
+			t.Errorf("%s: DueDayText = %q, want %q", tc.name, got, tc.want)
+		}
+	}
+	if got := DeadlineTypeText(constants.DeadlineTypeAppeal); got != "上诉" {
+		t.Errorf("DeadlineTypeText = %q", got)
+	}
+	if got := DeadlineViewText(constants.DeadlineViewOverdue); got != "已逾期" {
+		t.Errorf("DeadlineViewText = %q", got)
+	}
+}

@@ -63,7 +63,7 @@ cy-402/
 │   ├── cmd/server/main.go
 │   └── internal/
 │       ├── config/
-│       ├── model/                 # user/client/case/document/billing/audit_log
+│       ├── model/                 # user/client/case/deadline/document/billing/audit_log
 │       ├── repository/            # 按实体分文件
 │       ├── service/               # 业务逻辑 + 种子数据 + 单元测试
 │       ├── handler/               # HTTP 处理器（含 upload_handler、audit_log_handler）
@@ -74,15 +74,15 @@ cy-402/
 │       └── util/                  # jwt/logger/formatters/amount_formatter/app_error/file_upload
 └── frontend/
     └── src/
-        ├── api/                   # auth/user/client/case/document/billing/auditLog/upload
-        ├── stores/                # authStore/userStore/clientStore/caseStore/documentStore/billingStore
+        ├── api/                   # auth/user/client/case/deadline/document/billing/auditLog/upload
+        ├── stores/                # authStore/userStore/clientStore/caseStore/deadlineStore/documentStore/billingStore
         ├── types/
-        ├── components/common/     # CaseCard/DocumentList/StatusBadge/TimelineItem/AmountSummary/ClientCard/CaseTable/BillingCard/DocumentCard/FileUploader/FilterBar/AvatarUploader/PermissionGuard
+        ├── components/common/     # DeadlineList/DeadlineFormModal/DeadlineDaysTag/CaseCard/DocumentList/StatusBadge 等
         ├── hooks/                 # useAuth/usePagination/useFileUpload/usePermission
-        ├── pages/                 # Cases/CaseDetail/Clients/Billing/Documents/Profile/AuditLogs/Login
+        ├── pages/                 # Cases/CaseDetail/Deadlines/Clients/Billing/Documents/Profile/AuditLogs/Login
         ├── router/                # index.tsx + guards.tsx
-        ├── utils/                 # dateFormat/amountFormatter/request
-        └── constants/             # case/billing/document/errorCodes
+        ├── utils/                 # dateFormat/deadlineDays/amountFormatter/request
+        └── constants/             # case/deadline/billing/document/errorCodes
 ```
 
 ## 环境变量
@@ -137,6 +137,8 @@ cy-402/
 | GET | /api/v1/users/me | 当前登录用户信息 |
 | PUT | /api/v1/users/me | 修改个人资料 |
 | GET | /api/v1/users | 用户列表（仅管理员） |
+| GET | /api/v1/users/lawyers | 律师列表 |
+| GET | /api/v1/users/staff | 办案人员列表（律师与助理，期限责任人） |
 | GET | /api/v1/clients | 客户分页列表 |
 | POST | /api/v1/clients | 新建客户 |
 | GET | /api/v1/clients/:id | 客户详情与历史案件 |
@@ -148,6 +150,11 @@ cy-402/
 | PUT | /api/v1/cases/:id | 更新案件 |
 | POST | /api/v1/cases/:id/status | 案件状态流转 |
 | POST | /api/v1/cases/:id/assign | 分配主办律师 |
+| GET | /api/v1/cases/:id/deadlines | 查询某案件的期限列表 |
+| GET | /api/v1/deadlines | 期限中心（view=upcoming/overdue/completed，可按 assignee_id/case_id 筛选） |
+| POST | /api/v1/deadlines | 登记期限 |
+| PUT | /api/v1/deadlines/:id | 修改未完成期限 |
+| POST | /api/v1/deadlines/:id/complete | 标记完成（记录处理人、完成时间） |
 | GET | /api/v1/documents | 文档中心分页列表 |
 | POST | /api/v1/documents | 上传文档记录 |
 | GET | /api/v1/documents/by-case/:id | 按案件查询文档 |
@@ -166,6 +173,7 @@ cy-402/
 
 - 客户管理：新建/编辑/检索客户，查看历史案件。
 - 案件管理：创建案件、状态流转（立案→调查→庭审→结案→归档）、律师分配、筛选查询。
+- 期限管理：案件详情中登记开庭/上诉/举证等期限（类型、名称、截止时间、责任人），可修改未完成项或标记完成并保留处理人与时间；期限中心按即将到期（未来 7 天内）、已逾期、已完成查看，支持责任人筛选，展示案号、标题与剩余/逾期天数；已结案或归档案件只能补录过去日期，同一案件同一天同名称只保留一条。
 - 文档归档：按案件上传/查看/删除文档（起诉状/答辩状/证据/判决书/合同等）。
 - 费用结算：创建账单、标记支付、开票、作废，本月应收/已收/待收汇总。
 - 审计日志：写操作自动记录（管理员查看）。

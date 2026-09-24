@@ -133,7 +133,11 @@ func (s *CaseService) List(page, pageSize int, caseType, status string, lawyerID
 
 // Get 案件详情。
 func (s *CaseService) Get(id uint64) (*model.Case, error) {
-	return s.repo.FindByID(id)
+	c, err := s.repo.FindByID(id)
+	if err != nil {
+		return nil, util.Wrap(err, "Case[id=%d] get failed", id)
+	}
+	return c, nil
 }
 
 // canFlow 案件状态机：filed->investigating->hearing->closed->archived，允许回退到上一步。

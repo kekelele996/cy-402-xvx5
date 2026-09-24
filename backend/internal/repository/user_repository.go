@@ -60,6 +60,15 @@ func (r *UserRepository) ListLawyers() ([]model.User, error) {
 	return list, nil
 }
 
+// ListStaff 查询办案人员列表（律师与助理，可作为期限责任人）。
+func (r *UserRepository) ListStaff() ([]model.User, error) {
+	var list []model.User
+	if err := r.db.Where("role IN ?", []string{"lawyer", "assistant"}).Order("id ASC").Find(&list).Error; err != nil {
+		return nil, fmt.Errorf("list staff: %w", err)
+	}
+	return list, nil
+}
+
 // Update 更新用户。
 func (r *UserRepository) Update(u *model.User) error {
 	if err := r.db.Save(u).Error; err != nil {

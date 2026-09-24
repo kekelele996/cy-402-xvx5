@@ -64,6 +64,28 @@ CREATE TABLE IF NOT EXISTS billings (
 );
 ALTER TABLE billings ADD CONSTRAINT uni_billings_bill_no UNIQUE (bill_no);
 
+CREATE TABLE IF NOT EXISTS deadlines (
+  id BIGSERIAL PRIMARY KEY,
+  case_id BIGINT NOT NULL,
+  type VARCHAR(30) NOT NULL DEFAULT 'other',
+  name VARCHAR(200) NOT NULL,
+  due_at TIMESTAMPTZ NOT NULL,
+  due_date VARCHAR(10) NOT NULL,
+  assignee_id BIGINT NOT NULL,
+  status VARCHAR(30) NOT NULL DEFAULT 'pending',
+  completed_by_id BIGINT,
+  completed_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+-- 同一案件同一天同名称只保留一条（索引名与 GORM AutoMigrate 保持一致，避免重复建索引）
+CREATE UNIQUE INDEX IF NOT EXISTS idx_deadline_case_name_day
+  ON deadlines (case_id, name, due_date);
+CREATE INDEX IF NOT EXISTS idx_deadlines_due_at ON deadlines (due_at);
+CREATE INDEX IF NOT EXISTS idx_deadlines_assignee_id ON deadlines (assignee_id);
+CREATE INDEX IF NOT EXISTS idx_deadlines_status ON deadlines (status);
+CREATE INDEX IF NOT EXISTS idx_deadlines_completed_by_id ON deadlines (completed_by_id);
+
 CREATE TABLE IF NOT EXISTS audit_logs (
   id BIGSERIAL PRIMARY KEY,
   operator_id BIGINT NOT NULL DEFAULT 0,
@@ -101,6 +123,14 @@ INSERT INTO billings (id, bill_no, billing_type, amount, status, case_id, client
 (2, 'BILL2026080002', 'court_fee', 5000.00, 'pending', 1, 1, '', NOW()),
 (3, 'BILL2026080003', 'attorney_fee', 15000.00, 'invoiced', 2, 2, '已开票 15000 元', NOW());
 
+-- 期限演示数据：进行中案件有即将到期/已逾期项；已结案件仅补录过去日期且已完成
+INSERT INTO deadlines (id, case_id, type, name, due_at, due_date, assignee_id, status, completed_by_id, completed_at, created_at) VALUES
+(1, 1, 'hearing', '一审开庭', NOW() + INTERVAL '3 days', TO_CHAR(NOW() + INTERVAL '3 days', 'YYYY-MM-DD'), 2, 'pending', NULL, NULL, NOW()),
+(2, 1, 'evidence', '提交补充证据', NOW() - INTERVAL '2 days', TO_CHAR(NOW() - INTERVAL '2 days', 'YYYY-MM-DD'), 3, 'pending', NULL, NULL, NOW()),
+(3, 2, 'appeal', '上诉期限届满', NOW() + INTERVAL '12 days', TO_CHAR(NOW() + INTERVAL '12 days', 'YYYY-MM-DD'), 2, 'pending', NULL, NULL, NOW()),
+(4, 3, 'hearing', '仲裁开庭', NOW() - INTERVAL '40 days', TO_CHAR(NOW() - INTERVAL '40 days', 'YYYY-MM-DD'), 2, 'completed', 2, NOW() - INTERVAL '41 days', NOW() - INTERVAL '45 days'),
+(5, 3, 'trial', '领取裁决书', NOW() - INTERVAL '28 days', TO_CHAR(NOW() - INTERVAL '28 days', 'YYYY-MM-DD'), 3, 'completed', 3, NOW() - INTERVAL '28 days', NOW() - INTERVAL '30 days');
+
 INSERT INTO audit_logs (id, operator_id, operator_name, action, entity_type, entity_id, detail, ip, created_at) VALUES
 (1, 1, 'admin', 'seed', 'system', '', 'init', '127.0.0.1', NOW());
 
@@ -110,4 +140,5 @@ SELECT setval(pg_get_serial_sequence('clients', 'id'), (SELECT COALESCE(MAX(id),
 SELECT setval(pg_get_serial_sequence('cases', 'id'), (SELECT COALESCE(MAX(id), 1) FROM cases));
 SELECT setval(pg_get_serial_sequence('documents', 'id'), (SELECT COALESCE(MAX(id), 1) FROM documents));
 SELECT setval(pg_get_serial_sequence('billings', 'id'), (SELECT COALESCE(MAX(id), 1) FROM billings));
+SELECT setval(pg_get_serial_sequence('deadlines', 'id'), (SELECT COALESCE(MAX(id), 1) FROM deadlines));
 SELECT setval(pg_get_serial_sequence('audit_logs', 'id'), (SELECT COALESCE(MAX(id), 1) FROM audit_logs));

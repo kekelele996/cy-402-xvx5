@@ -1,18 +1,21 @@
 import { create } from 'zustand'
-import { getMe, updateProfile, listLawyers } from '@/api/user'
+import { getMe, updateProfile, listLawyers, listStaff } from '@/api/user'
 import type { User } from '@/types'
 
 interface UserState {
   me: User | null
   lawyers: User[]
+  staff: User[]
   fetchMe: () => Promise<User>
   updateMe: (data: Partial<User>) => Promise<User>
   fetchLawyers: () => Promise<void>
+  fetchStaff: () => Promise<void>
 }
 
 export const useUserStore = create<UserState>((set) => ({
   me: null,
   lawyers: [],
+  staff: [],
   async fetchMe() {
     const res: any = await getMe()
     set({ me: res.data })
@@ -26,5 +29,9 @@ export const useUserStore = create<UserState>((set) => ({
   async fetchLawyers() {
     const res: any = await listLawyers()
     set({ lawyers: res.data })
+  },
+  async fetchStaff() {
+    const res: any = await listStaff()
+    set({ staff: res.data })
   },
 }))

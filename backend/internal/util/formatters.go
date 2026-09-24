@@ -109,3 +109,78 @@ func DocumentTypeText(t string) string {
 func FormatMoney(v float64) string {
 	return fmt.Sprintf("¥%.2f", v)
 }
+
+// DeadlineTypeText 期限类型文本。
+func DeadlineTypeText(t string) string {
+	switch t {
+	case constants.DeadlineTypeHearing:
+		return "开庭"
+	case constants.DeadlineTypeAppeal:
+		return "上诉"
+	case constants.DeadlineTypeEvidence:
+		return "举证"
+	case constants.DeadlineTypeTrial:
+		return "审理"
+	case constants.DeadlineTypeExecution:
+		return "执行"
+	case constants.DeadlineTypeLimitation:
+		return "诉讼时效"
+	case constants.DeadlineTypeReply:
+		return "答辩"
+	case constants.DeadlineTypeRegistration:
+		return "立案登记"
+	default:
+		return "其他"
+	}
+}
+
+// DeadlineStatusText 期限状态文本。
+func DeadlineStatusText(s string) string {
+	switch s {
+	case constants.DeadlineStatusPending:
+		return "未完成"
+	case constants.DeadlineStatusCompleted:
+		return "已完成"
+	default:
+		return s
+	}
+}
+
+// DeadlineViewText 期限中心视图文本。
+func DeadlineViewText(v string) string {
+	switch v {
+	case constants.DeadlineViewUpcoming:
+		return "即将到期"
+	case constants.DeadlineViewOverdue:
+		return "已逾期"
+	case constants.DeadlineViewCompleted:
+		return "已完成"
+	default:
+		return v
+	}
+}
+
+// DueDayText 根据到期时间计算剩余/逾期天数文案。
+// 未完成：今天到期返回"今天到期"，未来返回"剩余 N 天"，过去返回"已逾期 N 天"；
+// 已完成：返回"已完成"。
+func DueDayText(dueAt time.Time, status string, now time.Time) string {
+	if status == constants.DeadlineStatusCompleted {
+		return "已完成"
+	}
+	days := DaysBetween(now, dueAt)
+	switch {
+	case days == 0:
+		return "今天到期"
+	case days > 0:
+		return fmt.Sprintf("剩余 %d 天", days)
+	default:
+		return fmt.Sprintf("已逾期 %d 天", -days)
+	}
+}
+
+// DaysBetween 按自然日计算 b - a（截断到天，时区一致）。
+func DaysBetween(a, b time.Time) int {
+	pa := time.Date(a.Year(), a.Month(), a.Day(), 0, 0, 0, 0, a.Location())
+	pb := time.Date(b.Year(), b.Month(), b.Day(), 0, 0, 0, 0, b.Location())
+	return int(pb.Sub(pa).Hours() / 24)
+}

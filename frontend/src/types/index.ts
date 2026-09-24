@@ -58,6 +58,30 @@ export interface Billing {
   created_at: string
 }
 
+export interface Deadline {
+  id: number
+  case_id: number
+  type: string
+  name: string
+  due_at: string
+  due_date: string
+  assignee_id: number
+  status: string
+  completed_by_id: number | null
+  completed_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+// 期限中心/案件期限列表项（后端 JOIN 用户与案件后的视图）
+export interface DeadlineItem extends Deadline {
+  case_no: string
+  case_title: string
+  case_status: string
+  assignee_name: string
+  completer_name: string
+}
+
 export interface AuditLog {
   id: number
   operator_id: number

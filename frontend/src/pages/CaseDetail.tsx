@@ -1,18 +1,23 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { Card, Descriptions, Tabs, Button, Select, Space, message, Tag } from 'antd'
+import { Button, Card, Descriptions, Tabs, Select, Space, message, Tag } from 'antd'
+import { PlusOutlined } from '@ant-design/icons'
 import { getCase, changeCaseStatus, assignLawyer } from '@/api/case'
 import { getClient } from '@/api/client'
+import { completeDeadline, createDeadline, updateDeadline } from '@/api/deadline'
 import DocumentList from '@/components/common/DocumentList'
 import BillingCard from '@/components/common/BillingCard'
 import StatusBadge from '@/components/common/StatusBadge'
 import PermissionGuard from '@/components/common/PermissionGuard'
 import TimelineItem from '@/components/common/TimelineItem'
+import DeadlineList from '@/components/common/DeadlineList'
+import DeadlineFormModal, { DeadlineFormValues } from '@/components/common/DeadlineFormModal'
 import { useDocumentStore } from '@/stores/documentStore'
 import { useBillingStore } from '@/stores/billingStore'
+import { useDeadlineStore } from '@/stores/deadlineStore'
 import { useUserStore } from '@/stores/userStore'
-import { CaseStatusOptions, CaseTypeOptions } from '@/constants/case'
-import type { CaseItem, Client } from '@/types'
+import { CaseStatusOptions, CaseTypeOptions, CaseStatus } from '@/constants/case'
+import type { CaseItem, Client, DeadlineItem } from '@/types'
 
 export default function CaseDetail() {
   const { id } = useParams()
@@ -23,7 +28,10 @@ export default function CaseDetail() {
   const [lawyer, setLawyer] = useState<number>()
   const docStore = useDocumentStore()
   const billingStore = useBillingStore()
+  const deadlineStore = useDeadlineStore()
   const userStore = useUserStore()
+  const [deadlineOpen, setDeadlineOpen] = useState(false)
+  const [editingDeadline, setEditingDeadline] = useState<DeadlineItem | null>(null)
 
   useEffect(() => {
     userStore.fetchLawyers()
@@ -41,6 +49,7 @@ export default function CaseDetail() {
     }
     docStore.fetchByCase(caseId)
     billingStore.fetchByCase(caseId)
+    deadlineStore.fetchByCase(caseId)
   }
 
   async function onStatusChange() {
@@ -54,6 +63,34 @@ export default function CaseDetail() {
     await assignLawyer(caseId, { lead_lawyer_id: lawyer })
     message.success('律师已分配')
     load()
+  }
+
+  // 已结案/归档案件只能补录过去日期
+  const caseLocked = !!item && (item.status === CaseStatus.CLOSED || item.status === CaseStatus.ARCHIVED)
+
+  async function onDeadlineSubmit(values: DeadlineFormValues) {
+    const payload = {
+      type: values.type,
+      name: values.name.trim(),
+      due_at: values.due_at.format('YYYY-MM-DD HH:mm'),
+      assignee_id: values.assignee_id,
+    }
+    if (editingDeadline) {
+      await updateDeadline(editingDeadline.id, payload)
+      message.success('期限已修改')
+    } else {
+      await createDeadline({ case_id: caseId, ...payload })
+      message.success('期限登记成功')
+    }
+    setDeadlineOpen(false)
+    setEditingDeadline(null)
+    deadlineStore.fetchByCase(caseId)
+  }
+
+  async function onDeadlineComplete(d: DeadlineItem) {
+    await completeDeadline(d.id)
+    message.success('期限已标记完成')
+    deadlineStore.fetchByCase(caseId)
   }
 
   if (!item) return null
@@ -123,6 +160,29 @@ export default function CaseDetail() {
             children: billingStore.byCase.map((b) => <BillingCard key={b.id} item={b} />),
           },
           {
+            key: 'deadlines',
+            label: `期限（${deadlineStore.byCase.length}）`,
+            children: (
+              <Space direction="vertical" style={{ width: '100%' }} size="middle">
+                <PermissionGuard roles={['admin', 'lawyer', 'assistant']}>
+                  <Button
+                    type="primary"
+                    icon={<PlusOutlined />}
+                    onClick={() => { setEditingDeadline(null); setDeadlineOpen(true) }}
+                  >
+                    登记期限
+                  </Button>
+                </PermissionGuard>
+                <DeadlineList
+                  data={deadlineStore.byCase}
+                  pagination={false}
+                  onEdit={(d) => { setEditingDeadline(d); setDeadlineOpen(true) }}
+                  onComplete={onDeadlineComplete}
+                />
+              </Space>
+            ),
+          },
+          {
             key: 'timeline',
             label: '时间线',
             children: (
@@ -136,6 +196,14 @@ export default function CaseDetail() {
             ),
           },
         ]}
+      />
+      <DeadlineFormModal
+        open={deadlineOpen}
+        caseId={caseId}
+        caseLocked={caseLocked}
+        editing={editingDeadline}
+        onCancel={() => { setDeadlineOpen(false); setEditingDeadline(null) }}
+        onSubmit={onDeadlineSubmit}
       />
     </Card>
   )

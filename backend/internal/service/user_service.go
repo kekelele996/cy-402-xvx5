@@ -118,6 +118,11 @@ func (s *UserService) ListLawyers() ([]model.User, error) {
 	return s.repo.ListLawyers()
 }
 
+// ListStaff 办案人员列表（律师与助理，用于期限责任人选择）。
+func (s *UserService) ListStaff() ([]model.User, error) {
+	return s.repo.ListStaff()
+}
+
 // List 用户列表（管理员）。
 func (s *UserService) List(page, pageSize int) ([]model.User, int64, error) {
 	return s.repo.List(page, pageSize)
