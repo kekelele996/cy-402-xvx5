@@ -23,4 +23,10 @@ const (
 	MsgBillingPaid           = "账单已标记支付"
 	MsgBillingInvoiced       = "账单已开票"
 	MsgBillingVoided         = "账单已作废"
+	MsgDeadlineCreated       = "期限登记成功"
+	MsgDeadlineUpdated       = "期限已更新"
+	MsgDeadlineCompleted     = "期限已标记完成"
+	MsgDeadlineDuplicate     = "同一案件同一天已存在同名期限"
+	MsgDeadlineCaseClosed    = "已结案或归档案件只能补录过去日期"
+	MsgDeadlineAlreadyDone   = "已完成的期限不可修改"
 )

@@ -76,6 +76,21 @@ CREATE TABLE IF NOT EXISTS audit_logs (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS deadlines (
+  id BIGSERIAL PRIMARY KEY,
+  case_id BIGINT NOT NULL,
+  deadline_type VARCHAR(30) NOT NULL DEFAULT 'other',
+  name VARCHAR(200) NOT NULL,
+  due_date DATE NOT NULL,
+  owner_id BIGINT NOT NULL,
+  status VARCHAR(30) NOT NULL DEFAULT 'pending',
+  completed_by BIGINT,
+  completed_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+-- 同一案件同一天同名称只留一条
+ALTER TABLE deadlines ADD CONSTRAINT uk_deadline_case_date_name UNIQUE (case_id, due_date, name);
+
 -- 预置种子数据（密码：admin/Admin@123，lawyer 与 assistant/User@123）
 INSERT INTO users (id, username, password_hash, real_name, role, license_no, email, phone, avatar, created_at) VALUES
 (1, 'admin', '$2a$10$bFfMuQAuKWflKxpuDYdFpeGJPVgD83q/.278LHYLL5S0DDmEfChX2', '系统管理员', 'admin', '', 'admin@cylawcase.dev', '13800000001', '', NOW()),
@@ -104,6 +119,14 @@ INSERT INTO billings (id, bill_no, billing_type, amount, status, case_id, client
 INSERT INTO audit_logs (id, operator_id, operator_name, action, entity_type, entity_id, detail, ip, created_at) VALUES
 (1, 1, 'admin', 'seed', 'system', '', 'init', '127.0.0.1', NOW());
 
+-- 期限种子：覆盖即将到期、已逾期、已完成三种视图
+INSERT INTO deadlines (id, case_id, deadline_type, name, due_date, owner_id, status, completed_by, completed_at, created_at) VALUES
+(1, 1, 'hearing', '一审开庭', CURRENT_DATE + 7, 2, 'pending', NULL, NULL, NOW()),
+(2, 1, 'evidence', '举证期限届满', CURRENT_DATE + 3, 2, 'pending', NULL, NULL, NOW()),
+(3, 1, 'appeal', '上诉截止', CURRENT_DATE - 2, 3, 'pending', NULL, NULL, NOW()),
+(4, 2, 'filing', '提交立案材料', CURRENT_DATE + 15, 3, 'pending', NULL, NULL, NOW()),
+(5, 2, 'other', '缴纳诉讼费', CURRENT_DATE - 1, 2, 'completed', 2, NOW() - INTERVAL '1 day', NOW());
+
 -- 重置自增序列，避免显式 ID 插入后主键冲突
 SELECT setval(pg_get_serial_sequence('users', 'id'), (SELECT COALESCE(MAX(id), 1) FROM users));
 SELECT setval(pg_get_serial_sequence('clients', 'id'), (SELECT COALESCE(MAX(id), 1) FROM clients));
@@ -111,3 +134,4 @@ SELECT setval(pg_get_serial_sequence('cases', 'id'), (SELECT COALESCE(MAX(id), 1
 SELECT setval(pg_get_serial_sequence('documents', 'id'), (SELECT COALESCE(MAX(id), 1) FROM documents));
 SELECT setval(pg_get_serial_sequence('billings', 'id'), (SELECT COALESCE(MAX(id), 1) FROM billings));
 SELECT setval(pg_get_serial_sequence('audit_logs', 'id'), (SELECT COALESCE(MAX(id), 1) FROM audit_logs));
+SELECT setval(pg_get_serial_sequence('deadlines', 'id'), (SELECT COALESCE(MAX(id), 1) FROM deadlines));

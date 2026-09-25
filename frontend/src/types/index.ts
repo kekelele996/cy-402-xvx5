@@ -70,6 +70,22 @@ export interface AuditLog {
   created_at: string
 }
 
+export interface DeadlineItem {
+  id: number
+  case_id: number
+  deadline_type: string
+  name: string
+  due_date: string
+  owner_id: number
+  status: string
+  completed_by: number | null
+  completed_at: string | null
+  created_at: string
+  case_no?: string
+  case_title?: string
+  days?: number
+}
+
 export interface PageResult<T> {
   list: T[]
   total: number

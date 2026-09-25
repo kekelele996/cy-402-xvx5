@@ -91,6 +91,16 @@ func (h *UserHandler) ListLawyers(c *gin.Context) {
 	OK(c, list)
 }
 
+// ListOptions 全部用户选项（期限责任人等下拉用）。
+func (h *UserHandler) ListOptions(c *gin.Context) {
+	list, err := h.svc.ListOptions()
+	if err != nil {
+		h.wrapError(c, err, "User list options failed")
+		return
+	}
+	OK(c, list)
+}
+
 // List 用户列表（管理员）。
 func (h *UserHandler) List(c *gin.Context) {
 	var q dto.PageQuery

@@ -46,6 +46,17 @@ func (s *SeedService) Seed() error {
 		{CaseNo: "CY20260001", Title: "华信科技买卖合同纠纷", CaseType: constants.CaseTypeCommercial, Status: constants.CaseStatusInvestigating, ClientID: 1, LeadLawyerID: 2, CoLawyerIDs: co, Summary: "货款催收与合同违约赔偿。"},
 		{CaseNo: "CY20260002", Title: "陈晓明民间借贷纠纷", CaseType: constants.CaseTypeCivil, Status: constants.CaseStatusFiled, ClientID: 2, LeadLawyerID: 2, Summary: "借款 50 万元及利息追偿。"},
 	}
+	// 期限种子：覆盖即将到期、已逾期、已完成三种视图。
+	today := todayBiz()
+	completedBy := uint64(2)
+	completedAt := now.Add(-24 * time.Hour)
+	deadlines := []model.Deadline{
+		{CaseID: 1, DeadlineType: constants.DeadlineTypeHearing, Name: "一审开庭", DueDate: today.AddDate(0, 0, 7), OwnerID: 2, Status: constants.DeadlineStatusPending},
+		{CaseID: 1, DeadlineType: constants.DeadlineTypeEvidence, Name: "举证期限届满", DueDate: today.AddDate(0, 0, 3), OwnerID: 2, Status: constants.DeadlineStatusPending},
+		{CaseID: 1, DeadlineType: constants.DeadlineTypeAppeal, Name: "上诉截止", DueDate: today.AddDate(0, 0, -2), OwnerID: 3, Status: constants.DeadlineStatusPending},
+		{CaseID: 2, DeadlineType: constants.DeadlineTypeFiling, Name: "提交立案材料", DueDate: today.AddDate(0, 0, 15), OwnerID: 3, Status: constants.DeadlineStatusPending},
+		{CaseID: 2, DeadlineType: constants.DeadlineTypeOther, Name: "缴纳诉讼费", DueDate: today.AddDate(0, 0, -1), OwnerID: 2, Status: constants.DeadlineStatusCompleted, CompletedBy: &completedBy, CompletedAt: &completedAt},
+	}
 	return s.db.Transaction(func(tx *gorm.DB) error {
 		for i := range users {
 			if err := tx.Create(&users[i]).Error; err != nil {
@@ -55,6 +66,11 @@ func (s *SeedService) Seed() error {
 		for i := range cases {
 			cases[i].AcceptDate = &now
 			if err := tx.Create(&cases[i]).Error; err != nil {
+				return err
+			}
+		}
+		for i := range deadlines {
+			if err := tx.Create(&deadlines[i]).Error; err != nil {
 				return err
 			}
 		}

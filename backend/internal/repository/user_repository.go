@@ -60,6 +60,15 @@ func (r *UserRepository) ListLawyers() ([]model.User, error) {
 	return list, nil
 }
 
+// ListAll 查询全部用户（用于责任人等下拉选项）。
+func (r *UserRepository) ListAll() ([]model.User, error) {
+	var list []model.User
+	if err := r.db.Order("id ASC").Find(&list).Error; err != nil {
+		return nil, fmt.Errorf("list all users: %w", err)
+	}
+	return list, nil
+}
+
 // Update 更新用户。
 func (r *UserRepository) Update(u *model.User) error {
 	if err := r.db.Save(u).Error; err != nil {

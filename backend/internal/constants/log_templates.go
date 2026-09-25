@@ -31,5 +31,11 @@ const (
 	LogUploadFileSuccess       = "upload file success"
 	LogUploadFileFailed        = "upload file failed"
 	LogRateLimitHit            = "rate limit hit"
+	LogDeadlineCreateSuccess   = "deadline create success"
+	LogDeadlineCreateFailed    = "deadline create failed"
+	LogDeadlineUpdateSuccess   = "deadline update success"
+	LogDeadlineUpdateFailed    = "deadline update failed"
+	LogDeadlineCompleteSuccess = "deadline complete success"
+	LogDeadlineCompleteFailed  = "deadline complete failed"
 	LogCommentCreateFailed     = "unused comment template"
 )

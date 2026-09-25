@@ -109,3 +109,29 @@ func DocumentTypeText(t string) string {
 func FormatMoney(v float64) string {
 	return fmt.Sprintf("¥%.2f", v)
 }
+
+// DeadlineTypeText 期限类型文本。
+func DeadlineTypeText(t string) string {
+	switch t {
+	case constants.DeadlineTypeHearing:
+		return "开庭"
+	case constants.DeadlineTypeAppeal:
+		return "上诉"
+	case constants.DeadlineTypeEvidence:
+		return "举证"
+	case constants.DeadlineTypeFiling:
+		return "立案"
+	default:
+		return "其他"
+	}
+}
+
+// DeadlineStatusText 期限状态文本。
+func DeadlineStatusText(s string) string {
+	switch s {
+	case constants.DeadlineStatusCompleted:
+		return "已完成"
+	default:
+		return "未完成"
+	}
+}

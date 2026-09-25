@@ -5,6 +5,7 @@ import { getCase, changeCaseStatus, assignLawyer } from '@/api/case'
 import { getClient } from '@/api/client'
 import DocumentList from '@/components/common/DocumentList'
 import BillingCard from '@/components/common/BillingCard'
+import DeadlineList from '@/components/common/DeadlineList'
 import StatusBadge from '@/components/common/StatusBadge'
 import PermissionGuard from '@/components/common/PermissionGuard'
 import TimelineItem from '@/components/common/TimelineItem'
@@ -116,6 +117,11 @@ export default function CaseDetail() {
             key: 'docs',
             label: '文档',
             children: <DocumentList documents={docStore.byCase} />,
+          },
+          {
+            key: 'deadlines',
+            label: '期限',
+            children: <DeadlineList caseId={caseId} caseStatus={item.status} />,
           },
           {
             key: 'billings',

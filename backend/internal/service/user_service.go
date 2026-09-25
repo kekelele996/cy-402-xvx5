@@ -118,6 +118,11 @@ func (s *UserService) ListLawyers() ([]model.User, error) {
 	return s.repo.ListLawyers()
 }
 
+// ListOptions 全部用户选项（用于期限责任人等下拉）。
+func (s *UserService) ListOptions() ([]model.User, error) {
+	return s.repo.ListAll()
+}
+
 // List 用户列表（管理员）。
 func (s *UserService) List(page, pageSize int) ([]model.User, int64, error) {
 	return s.repo.List(page, pageSize)

@@ -63,7 +63,7 @@ cy-402/
 │   ├── cmd/server/main.go
 │   └── internal/
 │       ├── config/
-│       ├── model/                 # user/client/case/document/billing/audit_log
+│       ├── model/                 # user/client/case/document/billing/audit_log/deadline
 │       ├── repository/            # 按实体分文件
 │       ├── service/               # 业务逻辑 + 种子数据 + 单元测试
 │       ├── handler/               # HTTP 处理器（含 upload_handler、audit_log_handler）
@@ -74,15 +74,15 @@ cy-402/
 │       └── util/                  # jwt/logger/formatters/amount_formatter/app_error/file_upload
 └── frontend/
     └── src/
-        ├── api/                   # auth/user/client/case/document/billing/auditLog/upload
-        ├── stores/                # authStore/userStore/clientStore/caseStore/documentStore/billingStore
+        ├── api/                   # auth/user/client/case/document/billing/deadline/auditLog/upload
+        ├── stores/                # authStore/userStore/clientStore/caseStore/documentStore/billingStore/deadlineStore
         ├── types/
-        ├── components/common/     # CaseCard/DocumentList/StatusBadge/TimelineItem/AmountSummary/ClientCard/CaseTable/BillingCard/DocumentCard/FileUploader/FilterBar/AvatarUploader/PermissionGuard
+        ├── components/common/     # CaseCard/DocumentList/StatusBadge/TimelineItem/AmountSummary/ClientCard/CaseTable/BillingCard/DocumentCard/FileUploader/FilterBar/AvatarUploader/PermissionGuard/DeadlineList
         ├── hooks/                 # useAuth/usePagination/useFileUpload/usePermission
-        ├── pages/                 # Cases/CaseDetail/Clients/Billing/Documents/Profile/AuditLogs/Login
+        ├── pages/                 # Cases/CaseDetail/Deadlines/Clients/Billing/Documents/Profile/AuditLogs/Login
         ├── router/                # index.tsx + guards.tsx
         ├── utils/                 # dateFormat/amountFormatter/request
-        └── constants/             # case/billing/document/errorCodes
+        └── constants/             # case/billing/deadline/document/errorCodes
 ```
 
 ## 环境变量
@@ -125,6 +125,10 @@ cy-402/
 - 后端：`backend/internal/constants/billing.go`、`backend/internal/model/billing.go`、`backend/internal/service/billing_service.go`、`backend/internal/util/formatters.go`、`backend/internal/constants/log_templates.go`、`backend/internal/constants/error_codes.go`、`database/init.sql`
 - 前端：`frontend/src/constants/billing.ts`、`frontend/src/components/common/StatusBadge.tsx`、`frontend/src/components/common/AmountSummary.tsx`、`frontend/src/components/common/BillingCard.tsx`、`frontend/src/pages/Billing.tsx`
 
+### DeadlineType / DeadlineStatus / DeadlineView（hearing/appeal/evidence/filing/other；pending/completed；upcoming/overdue/completed）
+- 后端：`backend/internal/constants/deadline.go`、`backend/internal/model/deadline.go`、`backend/internal/service/deadline_service.go`、`backend/internal/repository/deadline_repository.go`、`backend/internal/util/formatters.go`、`backend/internal/constants/log_templates.go`、`backend/internal/constants/messages.go`、`backend/internal/constants/error_codes.go`、`backend/internal/dto/dto_deadline.go`、`database/init.sql`
+- 前端：`frontend/src/constants/deadline.ts`、`frontend/src/components/common/DeadlineList.tsx`、`frontend/src/pages/Deadlines.tsx`、`frontend/src/pages/CaseDetail.tsx`
+
 ## API 接口清单
 
 | 方法 | 路径 | 说明 |
@@ -137,6 +141,8 @@ cy-402/
 | GET | /api/v1/users/me | 当前登录用户信息 |
 | PUT | /api/v1/users/me | 修改个人资料 |
 | GET | /api/v1/users | 用户列表（仅管理员） |
+| GET | /api/v1/users/lawyers | 律师列表（分配律师用） |
+| GET | /api/v1/users/options | 全部用户选项（期限责任人下拉用） |
 | GET | /api/v1/clients | 客户分页列表 |
 | POST | /api/v1/clients | 新建客户 |
 | GET | /api/v1/clients/:id | 客户详情与历史案件 |
@@ -159,6 +165,11 @@ cy-402/
 | POST | /api/v1/billings/:id/paid | 标记支付 |
 | POST | /api/v1/billings/:id/invoiced | 标记开票 |
 | POST | /api/v1/billings/:id/void | 作废账单 |
+| GET | /api/v1/deadlines | 期限中心（view=upcoming/overdue/completed，支持 owner_id 筛选与分页） |
+| POST | /api/v1/deadlines | 登记期限 |
+| GET | /api/v1/deadlines/by-case/:id | 按案件查询期限 |
+| PUT | /api/v1/deadlines/:id | 修改未完成期限 |
+| POST | /api/v1/deadlines/:id/complete | 标记完成（记录处理人与时间） |
 | GET | /api/v1/audit-logs | 审计日志（仅管理员） |
 | POST | /api/v1/upload/file | 文件上传 |
 
@@ -166,6 +177,7 @@ cy-402/
 
 - 客户管理：新建/编辑/检索客户，查看历史案件。
 - 案件管理：创建案件、状态流转（立案→调查→庭审→结案→归档）、律师分配、筛选查询。
+- 期限管理：案件详情登记期限（类型/名称/截止时间/责任人），未完成项可修改或标记完成（保留处理人与时间）；期限中心按即将到期/已逾期/已完成查看，支持责任人筛选，展示案号、标题与剩余/逾期天数；已结案或归档案件只能补录过去日期；同一案件同一天同名称只留一条。
 - 文档归档：按案件上传/查看/删除文档（起诉状/答辩状/证据/判决书/合同等）。
 - 费用结算：创建账单、标记支付、开票、作废，本月应收/已收/待收汇总。
 - 审计日志：写操作自动记录（管理员查看）。
